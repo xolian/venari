@@ -1,0 +1,85 @@
+version: '3'
+services:
+  venarimaster:
+    image: ${IMAGE_NAME}
+    ports:
+      - "${MASTER_EXTERNAL_PORT:-9000}:9000"
+    command:
+      - --node:disablejobqueue
+      - "true"
+      - --node:analyzerinprocess
+      - "false"
+      - "--server:loglevel"
+      - "info"
+      - "--logging:loglevel:default"
+      - "warning" #ASP.NET logging warning level
+      - "--server:port"
+      - "9000"
+      - "--node:RootAppDataDirectoryOverride"
+      - "/Data"
+      - "--server:deleteRulesOnStartup" #make sure we copy rules from the image to the mounted volume
+      - "true"
+    environment:
+      #Uncomment this if you want to name your master something specific.
+      #node__nodename: "Master_{{.Node.Hostname}}"
+      identity__authority: "${IDP_AUTHORITY_URL}"
+      #identity__clientid: "${IDP_CLIENT_ID}" 
+      identity__audience: "${IDP_AUDIENCE}"
+      identity__scope: "${IDP_SCOPES}"
+    networks:
+      venari:
+        aliases:
+          - master.venari.internal
+    volumes:
+        - ./secrets:/run/secrets/
+        - data:/Data
+  authserver:
+    image: assertsecurity/authserver
+    ports:
+      - "${AUTH_EXTERNAL_PORT}:9002"
+    command:
+      - "--logging:loglevel:default"
+      - "warning"
+    networks:
+      venari:
+        aliases:
+          - authserver.venari.internal
+    volumes:
+        - ./secrets:/run/secrets/
+    environment:
+      idp__adminpass: "secret:idp-admin-password"
+  jobnode:
+    image: ${IMAGE_NAME}
+    tmpfs: /dev/shm:exec,size=1g
+    #Uncomment if you want to name your job nodes something specific. Make sure the names don't collide!
+    #environment:
+    #  node__nodename: "{{.Node.Hostname}}"
+    ports:
+      - "9001:9001"    
+    volumes:
+      - ./secrets:/run/secrets/
+      - /dev/shm
+      - data:/Data
+    command:
+      - --node:masterNodeBaseAddress
+      - "${MASTER_URL}"
+      - --node:analyzerinprocess
+      - "false"
+      - "--server:loglevel"
+      - "info"
+      - "--logging:loglevel:default"
+      - "warning" #ASP.NET logging level
+      - "--node:RootAppDataDirectoryOverride"
+      - "/Data"
+      - "--server:port"
+      - "9001" 
+    environment:
+      node__authinfo_clientid: ${JOB_NODE_IDP_CLIENT_ID}
+    networks:
+      venari:
+        aliases:
+          - jobnode.venari.internal
+networks:
+  venari:
+volumes:
+  data:
