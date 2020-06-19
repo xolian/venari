@@ -1,11 +1,6 @@
-# Bootstrap
+# Documentation
 Create certificates and persist to secrets directory, you will need your devops license.lic file here.
 
-```
-docker run -it --name venari-bootstrap --rm -v "${PWD}:/host" -v /var/run/docker.sock:/var/run/docker.sock assertsecurity/venari-bootstrap:2.0 secrets -gencerts
-```
-
-# Documentation
 ```
 docker run -it --name venari-docs -p 8080:80 assertsecurity/venari-bootstrap docs
 
@@ -15,6 +10,10 @@ Swagger documentation https://master.venari.internal:9000/swagger/index.html
 # Install
 The files in this folder are designed to quickly get a Venari DevOps farm up and running for evaluation on a single machine.
 Please ensure that you are able to ping `host.docker.internal`. If  not, then add an entry for it in `/etc/hosts`.
+
+```
+docker run -it --name venari-bootstrap --rm -v "${PWD}:/host" -v /var/run/docker.sock:/var/run/docker.sock assertsecurity/venari-bootstrap:2.0 secrets -gencerts
+```
 
 To run the farm:
 
